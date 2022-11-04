@@ -598,6 +598,14 @@ struct IRForwardDifferentiate : IRInst
 struct IRDifferentiableTypeDictionaryItem : IRInst
 {
     IR_LEAF_ISA(DifferentiableTypeDictionaryItem)
+
+    IRInst* getConcreteType() { return getOperand(0); }
+    IRInst* getWitness() { return getOperand(1); }
+};
+
+struct IRDifferentiableTypeDictionaryDecoration : IRDecoration
+{
+    IR_LEAF_ISA(DifferentiableTypeDictionaryDecoration)
 };
 
 
@@ -2293,6 +2301,7 @@ public:
     IRInst* getBoolValue(bool value);
     IRInst* getIntValue(IRType* type, IRIntegerValue value);
     IRInst* getFloatValue(IRType* type, IRFloatingPointValue value);
+    IRInst* getDifferentialBottom();
     IRStringLit* getStringValue(const UnownedStringSlice& slice);
     IRPtrLit* _getPtrValue(void* ptr);
     IRPtrLit* getNullPtrValue(IRType* type);
@@ -2322,6 +2331,7 @@ public:
     IRAnyValueType* getAnyValueType(IRIntegerValue size);
     IRAnyValueType* getAnyValueType(IRInst* size);
     IRDynamicType* getDynamicType();
+    IRDifferentialBottomType* getDifferentialBottomType();
 
     IRTupleType* getTupleType(UInt count, IRType* const* types);
     IRTupleType* getTupleType(List<IRType*> const& types)
@@ -2380,7 +2390,7 @@ public:
 
     IRDifferentialPairType* getDifferentialPairType(
         IRType* valueType,
-        IRWitnessTable* witnessTable);
+        IRInst* witnessTable);
 
     IRFuncType* getFuncType(
         UInt            paramCount,
@@ -2490,26 +2500,10 @@ public:
 
     IRInst* emitMakeDifferentialPair(IRType* type, IRInst* primal, IRInst* differential);
 
-    // Emit and return a dictionary instruction to the global or generic scope.
-    IRInst* emitDifferentiableTypeDictionary();
-
-    // Emit and return a dictionary instruction to the global or generic scope,
-    // if one is not already present.
-    // 
-    IRInst* findOrEmitDifferentiableTypeDictionary();
-
-    // Returns the IRDifferentiableTypeDictionary in the scope of inst.
-    IRInst* findDifferentiableTypeDictionary(IRInst* inst);
+    IRInst* addDifferentiableTypeDictionaryDecoration(IRInst* target);
 
     // Add a differentiable type entry to the appropriate dictionary.
-    IRInst* addDifferentiableTypeEntry(IRInst* irType, IRInst* conformanceWitness);
-    
-    // Lookup a differentiable type entry in the appropriate dictionary.
-    // This recursively looks up in upper contexts.
-    // 
-    IRInst* findDifferentiableTypeEntry(IRInst* irType);
-
-    IRInst* findDifferentiableTypeEntry(IRInst* irType, IRInst* scope);
+    IRInst* addDifferentiableTypeEntry(IRInst* dictDecoration, IRInst* irType, IRInst* conformanceWitness);
 
     IRInst* emitSpecializeInst(
         IRType*         type,
@@ -2608,6 +2602,8 @@ public:
     IRInst* emitGetOptionalValue(IRInst* optValue);
     IRInst* emitMakeOptionalValue(IRInst* optType, IRInst* value);
     IRInst* emitMakeOptionalNone(IRInst* optType, IRInst* defaultValue);
+    IRInst* emitDifferentialPairGetDifferential(IRType* diffType, IRInst* diffPair);
+    IRInst* emitDifferentialPairGetPrimal(IRInst* diffPair);
     IRInst* emitMakeVector(
         IRType*         type,
         UInt            argCount,

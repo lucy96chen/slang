@@ -9,32 +9,6 @@ attribute_syntax [ForwardDifferentiable] : ForwardDifferentiableAttribute;
 __attributeTarget(FunctionDeclBase)
 attribute_syntax [ForwardDerivative(function)]   : ForwardDerivativeAttribute;
 
-/// Interface to denote types as differentiable.
-/// Allows for user-specified differential types as
-/// well as automatic generation, for when the associated type
-/// hasn't been declared explicitly.
-/// Note that the requirements must currently be defined in this exact order
-/// since the auto-diff pass relies on the order to grab the struct keys.
-/// 
-__magic_type(DifferentiableType)
-interface IDifferentiable
-{
-    // Note: the compiler implementation requires the `Differential` associated type to be defined
-    // before anything else.
-
-    [__BuiltinRequirement(_BuiltinRequirementKind.DifferentialType)]
-    associatedtype Differential;
-
-    [__BuiltinRequirement(_BuiltinRequirementKind.DZeroFunc)]
-    static Differential dzero();
-
-    [__BuiltinRequirement(_BuiltinRequirementKind.DAddFunc)]
-    static Differential dadd(Differential, Differential);
-
-    [__BuiltinRequirement(_BuiltinRequirementKind.DMulFunc)]
-    static Differential dmul(This, Differential);
-};
-
 // Add extensions for the standard types
 extension float : IDifferentiable
 {
@@ -59,60 +33,15 @@ extension float : IDifferentiable
     }
 }
 
-extension vector<float, 3> : IDifferentiable
+__generic<let N:int>
+extension vector<float, N> : IDifferentiable
 {
-    typedef vector<float, 3> Differential;
+    typedef vector<float, N> Differential;
 
     [__unsafeForceInlineEarly]
     static Differential dzero()
     {
-        return vector<float, 3>(0.f);
-    }
-
-    [__unsafeForceInlineEarly]
-    static Differential dadd(Differential a, Differential b)
-    {
-        return a + b;
-    }
-
-    [__unsafeForceInlineEarly]
-    static Differential dmul(This a, Differential b)
-    {
-        return a * b;
-    }
-}
-
-extension vector<float, 2> : IDifferentiable
-{
-    typedef vector<float, 2> Differential;
-
-    [__unsafeForceInlineEarly]
-    static Differential dzero()
-    {
-        return vector<float, 2>(0.f);
-    }
-
-    [__unsafeForceInlineEarly]
-    static Differential dadd(Differential a, Differential b)
-    {
-        return a + b;
-    }
-
-    [__unsafeForceInlineEarly]
-    static Differential dmul(This a, Differential b)
-    {
-        return a * b;
-    }
-}
-
-extension vector<float, 4> : IDifferentiable
-{
-    typedef vector<float, 4> Differential;
-
-    [__unsafeForceInlineEarly]
-    static Differential dzero()
-    {
-        return vector<float, 4>(0.f);
+        return vector<float, N>(0.f);
     }
 
     [__unsafeForceInlineEarly]
@@ -133,8 +62,10 @@ extension vector<float, 4> : IDifferentiable
 __generic<T : IDifferentiable>
 __magic_type(DifferentialPairType)
 __intrinsic_type($(kIROp_DifferentialPairType))
-struct __DifferentialPair
+struct DifferentialPair : IDifferentiable
 {
+    typedef DifferentialPair<T.Differential> Differential;
+    typedef T.Differential DifferentialElementType;
 
     __intrinsic_op($(kIROp_MakeDifferentialPair))
     __init(T _primal, T.Differential _differential);
@@ -142,6 +73,7 @@ struct __DifferentialPair
     __intrinsic_op($(kIROp_DifferentialPairGetDifferential))
     T.Differential d();
 
+    [__unsafeForceInlineEarly]
     T.Differential getDifferential()
     {
         return d();
@@ -150,13 +82,42 @@ struct __DifferentialPair
     __intrinsic_op($(kIROp_DifferentialPairGetPrimal))
     T p();
 
+    [__unsafeForceInlineEarly]
     T getPrimal()
     {
         return p();
     }
+
+    [__unsafeForceInlineEarly]
+    static Differential dzero()
+    {
+        return Differential(T.dzero(), T.Differential.dzero());
+    }
+
+    [__unsafeForceInlineEarly]
+    static Differential dadd(Differential a, Differential b)
+    {
+        return Differential(
+            T.dadd(
+                a.p(),
+                b.p()
+            ),
+            T.Differential.dadd(a.d(), b.d()));
+    }
+
+    [__unsafeForceInlineEarly]
+    static Differential dmul(This a, Differential b)
+    {
+        return Differential(
+            T.dmul(a.p(), b.p()),
+            T.Differential.dmul(a.d(), b.d()));
+    }
 };
 
 typealias IDFloat = IFloat & IDifferentiable;
+
+#define VECTOR_MAP_UNARY(TYPE, COUNT, FUNC, VALUE) \
+    vector<TYPE,COUNT> result; for(int i = 0; i < COUNT; ++i) { result[i] = FUNC(VALUE[i]); } return result
 
 namespace dstd
 {
@@ -171,9 +132,9 @@ namespace dstd
     T exp(T x);
 
     __generic<T : IDFloat>
-    __DifferentialPair<T> d_exp(__DifferentialPair<T> dpx)
+    DifferentialPair<T> d_exp(DifferentialPair<T> dpx)
     {
-        return __DifferentialPair<T>(
+        return DifferentialPair<T>(
             exp(dpx.p()),
             T.dmul(exp(dpx.p()), dpx.d()));
     }
@@ -189,9 +150,9 @@ namespace dstd
     T sin(T x);
 
     __generic<T : IDFloat>
-    __DifferentialPair<T> d_sin(__DifferentialPair<T> dpx)
+    DifferentialPair<T> d_sin(DifferentialPair<T> dpx)
     {
-        return __DifferentialPair<T>(
+        return DifferentialPair<T>(
             sin(dpx.p()),
             T.dmul(cos(dpx.p()), dpx.d()));
     }
@@ -207,10 +168,36 @@ namespace dstd
     T cos(T x);
 
     __generic<T : IDFloat>
-    __DifferentialPair<T> d_cos(__DifferentialPair<T> dpx)
+    DifferentialPair<T> d_cos(DifferentialPair<T> dpx)
     {
-        return __DifferentialPair<T>(
+        return DifferentialPair<T>(
             cos(dpx.p()),
             T.dmul(-sin(dpx.p()), dpx.d()));
     }
+
+    __generic<let N : int>
+    __target_intrinsic(hlsl)
+    __target_intrinsic(glsl)
+    __target_intrinsic(spirv_direct, "12 resultType resultId glsl450 27 _0")
+    [ForwardDerivative(d_exp_vector)]
+    vector<float, N> exp(vector<float, N> x)
+    {
+        VECTOR_MAP_UNARY(float, N, dstd.exp, x);
+    }
+
+    __generic<let N : int>
+    DifferentialPair<vector<float, N>> d_exp_vector(DifferentialPair<vector<float, N>> dpx)
+    {
+        vector<float, N> result;
+        vector<float, N>.Differential d_result;
+        for(int i = 0; i < N; ++i)
+        { 
+            DifferentialPair<float> dpexp = dstd.d_exp(DifferentialPair<float>(dpx.p()[i], dpx.d()[i]));
+            result[i] = dpexp.p(); 
+            d_result[i] = dpexp.d(); 
+        }
+
+        return DifferentialPair<vector<float, N>>(result, d_result);
+    }
+
 };

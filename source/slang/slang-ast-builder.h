@@ -19,6 +19,7 @@ class SharedASTBuilder : public RefObject
 public:
     
     void registerBuiltinDecl(Decl* decl, BuiltinTypeModifier* modifier);
+    void registerBuiltinRequirementDecl(Decl* decl, BuiltinRequirementModifier* modifier);
     void registerMagicDecl(Decl* decl, MagicTypeModifier* modifier);
 
         /// Get the string type
@@ -35,6 +36,8 @@ public:
     Type* getNullPtrType();
         /// Get the NullPtr type
     Type* getNoneType();
+        /// Get the DifferentialBottom type.
+    Type* getDifferentialBottomType();
 
     const ReflectClassInfo* findClassInfo(Name* name);
     SyntaxClass<NodeBase> findSyntaxClass(Name* name);
@@ -46,6 +49,11 @@ public:
     Decl* findMagicDecl(String const& name);
 
     Decl* tryFindMagicDecl(String const& name);
+
+    Decl* findBuiltinRequirementDecl(BuiltinRequirementKind kind)
+    {
+        return m_builtinRequirementDecls[kind].GetValue();
+    }
 
         /// A name pool that can be used for lookup for findClassInfo etc. It is the same pool as the Session.
     NamePool* getNamePool() { return m_namePool; }
@@ -79,10 +87,11 @@ protected:
     Type* m_dynamicType = nullptr;
     Type* m_nullPtrType = nullptr;
     Type* m_noneType = nullptr;
-
+    Type* m_diffBottomType = nullptr;
     Type* m_builtinTypes[Index(BaseType::CountOf)];
 
     Dictionary<String, Decl*> m_magicDecls;
+    Dictionary<BuiltinRequirementKind, Decl*> m_builtinRequirementDecls;
 
     Dictionary<UnownedStringSlice, const ReflectClassInfo*> m_sliceToTypeMap;
     Dictionary<Name*, const ReflectClassInfo*> m_nameToTypeMap;
@@ -297,6 +306,7 @@ public:
     Type* getOverloadedType() { return m_sharedASTBuilder->m_overloadedType; }
     Type* getErrorType() { return m_sharedASTBuilder->m_errorType; }
     Type* getBottomType() { return m_sharedASTBuilder->m_bottomType; }
+    Type* getDifferentialBottomType() { return m_sharedASTBuilder->getDifferentialBottomType(); }
     Type* getStringType() { return m_sharedASTBuilder->getStringType(); }
     Type* getNullPtrType() { return m_sharedASTBuilder->getNullPtrType(); }
     Type* getNoneType() { return m_sharedASTBuilder->getNoneType(); }
@@ -326,9 +336,12 @@ public:
 
     VectorExpressionType* getVectorType(Type* elementType, IntVal* elementCount);
 
-    DifferentialPairType* getDifferentialPairType(Type* valueType, Witness* conformanceWitness);
+    DifferentialPairType* getDifferentialPairType(
+        Type* valueType,
+        Witness* primalIsDifferentialWitness);
 
     DeclRef<InterfaceDecl> getDifferentiableInterface();
+    Decl* getDifferentiableAssociatedTypeRequirement();
 
     bool isDifferentiableInterfaceAvailable();
 

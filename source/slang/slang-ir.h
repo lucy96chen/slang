@@ -861,6 +861,8 @@ SIMPLE_IR_TYPE(NativeStringType, StringTypeBase)
 
 SIMPLE_IR_TYPE(DynamicType, Type)
 
+SIMPLE_IR_TYPE(DifferentialBottomType, Type)
+
 // True if types are equal
 // Note compares nominal types by name alone 
 bool isTypeEqual(IRType* a, IRType* b);
@@ -1323,6 +1325,7 @@ SIMPLE_IR_TYPE(GenericKind, Kind)
 struct IRDifferentialPairType : IRType
 {
     IRType* getValueType() { return (IRType*)getOperand(0); }
+    IRInst* getWitness() { return (IRInst*)getOperand(1); }
 
     IR_LEAF_ISA(DifferentialPairType)
 };

@@ -1967,6 +1967,7 @@ namespace Slang
                 return getStringSlice() == rhs->getStringSlice();
             }
             case kIROp_VoidLit:
+            case kIROp_DifferentialBottomValue:
             {
                 return true;
             }
@@ -2009,6 +2010,7 @@ namespace Slang
                 return combineHash(code, Slang::getHashCode(slice.begin(), slice.getLength()));
             }
             case kIROp_VoidLit:
+            case kIROp_DifferentialBottomValue:
             {
                 return code;
             }
@@ -2074,10 +2076,18 @@ namespace Slang
             }
             case kIROp_VoidLit:
             {
-                const size_t instSize = prefixSize;
+                const size_t instSize = prefixSize + sizeof(void*);
                 irValue = static_cast<IRConstant*>(
                     _createInst(instSize, keyInst.getFullType(), keyInst.getOp()));
                 irValue->value.ptrVal = keyInst.value.ptrVal;
+                break;
+            }
+            case kIROp_DifferentialBottomValue:
+            {
+                const size_t instSize = prefixSize + sizeof(void*);
+                irValue = static_cast<IRConstant*>(
+                    _createInst(instSize, keyInst.getFullType(), keyInst.getOp()));
+                irValue->value.ptrVal = nullptr;
                 break;
             }
             case kIROp_StringLit:
@@ -2180,6 +2190,17 @@ namespace Slang
         }
         
         return _findOrEmitConstant(keyInst);
+    }
+
+    IRInst* IRBuilder::getDifferentialBottom()
+    {
+        IRType* type = getDifferentialBottomType();
+        IRConstant keyInst;
+        memset(&keyInst, 0, sizeof(keyInst));
+        keyInst.m_op = kIROp_DifferentialBottomValue;
+        keyInst.typeUse.usedValue = type;
+        keyInst.value.intVal = 0;
+        return (IRInst*)_findOrEmitConstant(keyInst);
     }
 
     IRStringLit* IRBuilder::getStringValue(const UnownedStringSlice& inSlice)
@@ -2564,6 +2585,12 @@ namespace Slang
 
     IRDynamicType* IRBuilder::getDynamicType() { return (IRDynamicType*)getType(kIROp_DynamicType); }
 
+    IRDifferentialBottomType* IRBuilder::getDifferentialBottomType()
+    {
+        return (IRDifferentialBottomType*)getType(kIROp_DifferentialBottomType);
+    }
+
+
     IRAssociatedType* IRBuilder::getAssociatedType(ArrayView<IRInterfaceType*> constraintTypes)
     {
         return (IRAssociatedType*)getType(kIROp_AssociatedType,
@@ -2760,7 +2787,7 @@ namespace Slang
 
     IRDifferentialPairType* IRBuilder::getDifferentialPairType(
         IRType* valueType,
-        IRWitnessTable* witnessTable)
+        IRInst* witnessTable)
     {
         IRInst* operands[] = { valueType, witnessTable };
         return (IRDifferentialPairType*)getType(
@@ -3389,6 +3416,25 @@ namespace Slang
         return emitIntrinsicInst(type, kIROp_makeVector, argCount, args);
     }
 
+    IRInst* IRBuilder::emitDifferentialPairGetDifferential(IRType* diffType, IRInst* diffPair)
+    {
+        return emitIntrinsicInst(
+            diffType,
+            kIROp_DifferentialPairGetDifferential,
+            1,
+            &diffPair);
+    }
+
+    IRInst* IRBuilder::emitDifferentialPairGetPrimal(IRInst* diffPair)
+    {
+        auto valueType = as<IRDifferentialPairType>(diffPair->getDataType())->getValueType();
+        return emitIntrinsicInst(
+            valueType,
+            kIROp_DifferentialPairGetPrimal,
+            1,
+            &diffPair);
+    }
+
     IRInst* IRBuilder::emitMakeMatrix(
         IRType*         type,
         UInt            argCount,
@@ -3546,123 +3592,33 @@ namespace Slang
             value->insertAtEnd(parent);
         }
     }
-
     
-    IRInst* IRBuilder::emitDifferentiableTypeDictionary()
+    IRInst* IRBuilder::addDifferentiableTypeDictionaryDecoration(IRInst* target)
     {
-        auto inst = createInst<IRInst>(
-            this,
-            kIROp_DifferentiableTypeDictionary,
-            nullptr);
-
-        addGlobalValue(this, inst);
-        return inst;
+        return addDecoration(target, kIROp_DifferentiableTypeDictionaryDecoration);
     }
 
-    IRInst* IRBuilder::findOrEmitDifferentiableTypeDictionary()
-    {
-        auto currentLoc = this->getInsertLoc();
-        auto currentInst = currentLoc.getInst();
-        
-        if (auto diffTypeDictionary = findDifferentiableTypeDictionary(currentInst))
-            return diffTypeDictionary;
-
-        return emitDifferentiableTypeDictionary();
-    }
-
-    IRInst* IRBuilder::findDifferentiableTypeDictionary(IRInst* parent)
-    {
-        //auto parent = inst->getParent();
-        while (parent)
-        {
-            // Inserting into the top level of a module?
-            // That is fine, and we can stop searching.
-            if (as<IRModuleInst>(parent))
-                break;
-
-            // Inserting into a basic block inside of
-            // a generic? That is okay too.
-            if (auto block = as<IRBlock>(parent))
-            {
-                if (as<IRGeneric>(block->parent))
-                    break;
-            }
-
-            // Otherwise, move up the chain.
-            parent = parent->parent;
-        }
-
-        for (auto child = parent->getFirstChild(); child; child = child->getNextInst())
-        {
-            if (child->getOp() == kIROp_DifferentiableTypeDictionary)
-                return child;
-        }
-
-        return nullptr;
-    }
-
-    IRInst* IRBuilder::addDifferentiableTypeEntry(IRInst* irType, IRInst* conformanceWitness)
+    IRInst* IRBuilder::addDifferentiableTypeEntry(IRInst* dictDecoration, IRInst* irType, IRInst* conformanceWitness)
     {
         auto oldLoc = this->getInsertLoc();
 
         IRDifferentiableTypeDictionaryItem* item = nullptr;
 
-        if (auto diffTypeDictionary = findOrEmitDifferentiableTypeDictionary())
-        {
-            this->setInsertInto(diffTypeDictionary);
+        this->setInsertInto(dictDecoration);
 
-            IRInst* args[2] = {irType, conformanceWitness};
-            item = createInstWithTrailingArgs<IRDifferentiableTypeDictionaryItem>(
-                this,
-                kIROp_DifferentiableTypeDictionaryItem,
-                nullptr,
-                2,
-                args);
+        IRInst* args[2] = {irType, conformanceWitness};
+        item = createInstWithTrailingArgs<IRDifferentiableTypeDictionaryItem>(
+            this,
+            kIROp_DifferentiableTypeDictionaryItem,
+            nullptr,
+            2,
+            args);
                 
-            addInst(item);
-        }
+        addInst(item);
 
         this->setInsertLoc(oldLoc);
 
         return item;
-    }
-
-    IRInst* IRBuilder::findDifferentiableTypeEntry(IRInst* irType, IRInst* scope)
-    {
-        for (auto child = scope->getFirstChild(); child; child = child->getNextInst()) 
-        {
-            if (child->getOp() == kIROp_DifferentiableTypeDictionary)
-            {
-                for (auto entry = child->getFirstChild(); entry; entry = entry->getNextInst())
-                {
-                    IRInst* entryType = entry->getOperand(0);
-                    IRInst* entryConformanceWitness = entry->getOperand(1);
-
-                    if (irType == entryType)
-                    {
-                        return entryConformanceWitness;
-                    }
-                }
-            }
-        }
-
-        return nullptr;
-    }
-
-    IRInst* IRBuilder::findDifferentiableTypeEntry(IRInst* irType)
-    {
-        auto instScope = this->getInsertLoc().getInst();
-
-        while (instScope)
-        {
-            if (auto witness = findDifferentiableTypeEntry(irType, instScope))
-            {
-                return witness;
-            }
-            instScope = instScope->getParent();
-        }
-
-        return nullptr;
     }
 
 
@@ -6282,6 +6238,8 @@ namespace Slang
         case kIROp_MakeOptionalNone:
         case kIROp_OptionalHasValue:
         case kIROp_GetOptionalValue:
+        case kIROp_MakeTuple:
+        case kIROp_GetTupleElement:
         case kIROp_Load:    // We are ignoring the possibility of loads from bad addresses, or `volatile` loads
         case kIROp_ImageSubscript:
         case kIROp_FieldExtract:
