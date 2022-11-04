@@ -70,21 +70,62 @@ void _optixLogCallback(unsigned int level, const char* tag, const char* message,
 }
 #       endif
 #    endif
+
+AdapterLUID getAdapterLUID(int device)
+{
+    AdapterLUID luid = {};
+#if SLANG_WIN32 || SLANG_WIN64
+    // LUID reported by CUDA is undefined i not on windows platform.
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, device);
+    SLANG_ASSERT(sizeof(AdapterLUID) >= sizeof(cudaDeviceProp::luid));
+    memcpy(&luid, prop.luid, sizeof(cudaDeviceProp::luid));
+#else
+    SLANG_ASSERT(sizeof(AdapterLUID) >= sizeof(int));
+    memcpy(&luid, &device, sizeof(int));
+#endif
+    return luid;
+}
+
 } // namespace cuda
+
+Result SLANG_MCALL getCUDAAdapters(List<AdapterInfo>& outAdapters)
+{
+    int deviceCount;
+    cudaGetDeviceCount(&deviceCount);
+    for (int device = 0; device < deviceCount; device++)
+    {
+        cudaDeviceProp prop;
+        cudaGetDeviceProperties(&prop, device);
+        AdapterInfo info = {};
+        memcpy(info.name, prop.name, Math::Min(strlen(prop.name), sizeof(AdapterInfo::name) - 1));
+        info.luid = cuda::getAdapterLUID(device);
+        outAdapters.add(info);
+    }
+
+    return SLANG_OK;
+}
 
 Result SLANG_MCALL createCUDADevice(const IDevice::Desc* desc, IDevice** outDevice)
 {
-RefPtr<cuda::DeviceImpl> result = new cuda::DeviceImpl();
-SLANG_RETURN_ON_FAIL(result->initialize(*desc));
-returnComPtr(outDevice, result);
-return SLANG_OK;
+    RefPtr<cuda::DeviceImpl> result = new cuda::DeviceImpl();
+    SLANG_RETURN_ON_FAIL(result->initialize(*desc));
+    returnComPtr(outDevice, result);
+    return SLANG_OK;
 }
 #else
+
+Result SLANG_MCALL getCUDAAdapters(List<AdapterInfo>& outAdapters)
+{
+    SLANG_UNUSED(outAdapters);
+    return SLANG_FAIL;
+}
+
 Result SLANG_MCALL createCUDADevice(const IDevice::Desc* desc, IDevice** outDevice)
 {
-SLANG_UNUSED(desc);
-*outDevice = nullptr;
-return SLANG_FAIL;
+    SLANG_UNUSED(desc);
+    *outDevice = nullptr;
+    return SLANG_FAIL;
 }
 #endif
 
