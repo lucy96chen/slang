@@ -96,6 +96,8 @@ public:
     virtual void beginCommandBuffer(const CommandBufferInfo&) {}
     virtual void endCommandBuffer(const CommandBufferInfo&) {}
 
+    virtual void signalFence(IFence* fence, uint64_t valueToSignal) = 0;
+
 public:
     Slang::RefPtr<ImmediateCommandQueueBase> m_queue;
     uint32_t m_queueCreateCount = 0;

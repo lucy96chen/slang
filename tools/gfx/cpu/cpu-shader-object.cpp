@@ -169,10 +169,12 @@ SLANG_NO_THROW Result SLANG_MCALL
     auto view = static_cast<ResourceViewImpl*>(inView);
     m_resources[viewIndex] = view;
 
-    switch (view->getViewKind())
+    switch (bindingRange.bindingType)
     {
-    case ResourceViewImpl::Kind::Texture:
+    case slang::BindingType::Texture:
+    case slang::BindingType::MutableTexture:
     {
+        // TODO: handle if view is null
         auto textureView = static_cast<TextureResourceViewImpl*>(view);
 
         slang_prelude::IRWTexture* textureObj = textureView;
@@ -180,16 +182,26 @@ SLANG_NO_THROW Result SLANG_MCALL
     }
     break;
 
-    case ResourceViewImpl::Kind::Buffer:
+    case slang::BindingType::ConstantBuffer:
+    case slang::BindingType::TypedBuffer:
+    case slang::BindingType::RawBuffer:
+    case slang::BindingType::MutableTypedBuffer:
+    case slang::BindingType::MutableRawBuffer:
     {
         auto bufferView = static_cast<BufferResourceViewImpl*>(view);
-        auto buffer = bufferView->getBuffer();
-        auto desc = *buffer->getDesc();
 
-        void* dataPtr = buffer->m_data;
-        size_t size = desc.sizeInBytes;
-        if (desc.elementSize > 1)
-            size /= desc.elementSize;
+        void* dataPtr = nullptr;
+        size_t size = 0;
+        if (bufferView)
+        {
+            auto buffer = bufferView->getBuffer();
+            auto desc = *buffer->getDesc();
+
+            dataPtr = buffer->m_data;
+            size = desc.sizeInBytes;
+            if (desc.elementSize > 1)
+                size /= desc.elementSize;
+        }
 
         auto ptrOffset = offset;
         SLANG_RETURN_ON_FAIL(setData(ptrOffset, &dataPtr, sizeof(dataPtr)));
@@ -255,16 +267,16 @@ EntryPointLayoutImpl* EntryPointShaderObjectImpl::getLayout()
 {
     return static_cast<EntryPointLayoutImpl*>(m_layout.Ptr());
 }
-
-SLANG_NO_THROW uint32_t SLANG_MCALL RootShaderObjectImpl::addRef()
-{
-    return 1;
-}
-
-SLANG_NO_THROW uint32_t SLANG_MCALL RootShaderObjectImpl::release()
-{
-    return 1;
-}
+// 
+// SLANG_NO_THROW uint32_t SLANG_MCALL RootShaderObjectImpl::addRef()
+// {
+//     return 1;
+// }
+// 
+// SLANG_NO_THROW uint32_t SLANG_MCALL RootShaderObjectImpl::release()
+// {
+//     return 1;
+// }
 
 Result RootShaderObjectImpl::init(IDevice* device, RootShaderObjectLayoutImpl* programLayout)
 {

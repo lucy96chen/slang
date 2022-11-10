@@ -4,11 +4,13 @@
 #include <chrono>
 
 #include "cpu-buffer.h"
+#include "cpu-fence.h"
 #include "cpu-pipeline-state.h"
 #include "cpu-query.h"
 #include "cpu-resource-views.h"
 #include "cpu-shader-object.h"
 #include "cpu-shader-program.h"
+#include "cpu-swap-chain.h"
 #include "cpu-texture.h"
 
 namespace gfx
@@ -36,7 +38,7 @@ namespace cpu
         // Initialize DeviceInfo
         {
             m_info.deviceType = DeviceType::CPU;
-            m_info.bindingStyle = BindingStyle::CUDA;
+            m_info.bindingStyle = BindingStyle::CPU;
             m_info.projectionStyle = ProjectionStyle::DirectX;
             m_info.apiName = "CPU";
             static const float kIdentity[] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
@@ -136,6 +138,16 @@ namespace cpu
         return SLANG_OK;
     }
 
+    Result DeviceImpl::createMutableRootShaderObject(
+        IShaderProgram* program,
+        IShaderObject** outObject)
+    {
+        RefPtr<ShaderObjectBase> shaderObject;
+        SLANG_RETURN_ON_FAIL(createRootShaderObject(program, shaderObject.writeRef()));
+        returnComPtr(outObject, shaderObject);
+        return SLANG_OK;
+    }
+
     Result DeviceImpl::createRootShaderObject(IShaderProgram* program, ShaderObjectBase** outObject)
     {
         auto cpuProgram = static_cast<ShaderProgramImpl*>(program);
@@ -206,6 +218,30 @@ namespace cpu
         SLANG_UNUSED(desc);
         *outSampler = nullptr;
         return SLANG_OK;
+    }
+
+    SLANG_NO_THROW Result SLANG_MCALL DeviceImpl::createSwapchain(
+        const ISwapchain::Desc& desc,
+        WindowHandle window,
+        ISwapchain** outSwapchain)
+    {
+        RefPtr<SwapchainImpl> swapchain = new SwapchainImpl();
+        swapchain->init(desc, window);
+        returnComPtr(outSwapchain, swapchain);
+        return SLANG_OK;
+    }
+
+    SLANG_NO_THROW Result SLANG_MCALL DeviceImpl::createFence(const IFence::Desc& desc, IFence** outFence)
+    {
+        RefPtr<FenceImpl> fence = new FenceImpl();
+        fence->init(this, desc);
+        returnComPtr(outFence, fence);
+        return SLANG_OK;
+    }
+
+    void DeviceImpl::signalFence(IFence* fence, uint64_t valueToSignal)
+    {
+        static_cast<FenceImpl*>(fence)->setCurrentValue(valueToSignal);
     }
 
     void* DeviceImpl::map(IBufferResource* buffer, MapFlavor flavor)

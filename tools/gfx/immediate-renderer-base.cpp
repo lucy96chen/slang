@@ -658,9 +658,6 @@ public:
     virtual SLANG_NO_THROW void SLANG_MCALL executeCommandBuffers(
         GfxCount count, ICommandBuffer* const* commandBuffers, IFence* fence, uint64_t valueToSignal) override
     {
-        // TODO: implement fence signal.
-        assert(fence == nullptr);
-
         CommandBufferInfo info = {};
         for (GfxIndex i = 0; i < count; i++)
         {
@@ -672,6 +669,11 @@ public:
             static_cast<CommandBufferImpl*>(commandBuffers[i])->execute();
         }
         static_cast<ImmediateRendererBase*>(m_renderer.get())->endCommandBuffer(info);
+
+        if (fence)
+        {
+            static_cast<ImmediateRendererBase*>(m_renderer.get())->signalFence(fence, valueToSignal);
+        }
     }
 
     virtual SLANG_NO_THROW void SLANG_MCALL waitOnHost() override { getRenderer()->waitForGpu(); }

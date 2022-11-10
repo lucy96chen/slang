@@ -615,6 +615,13 @@ struct HLSLVaryingLayoutRulesImpl : DefaultVaryingLayoutRulesImpl
     {}
 };
 
+struct CPUVaryingLayoutRulesImpl : DefaultVaryingLayoutRulesImpl
+{
+    CPUVaryingLayoutRulesImpl(LayoutResourceKind kind)
+        : DefaultVaryingLayoutRulesImpl(kind)
+    {}
+};
+
 //
 
 struct GLSLSpecializationConstantLayoutRulesImpl : DefaultLayoutRulesImpl
@@ -759,6 +766,9 @@ HLSLVaryingLayoutRulesImpl kHLSLVaryingOutputLayoutRulesImpl(LayoutResourceKind:
 HLSLRayTracingLayoutRulesImpl kHLSLRayPayloadParameterLayoutRulesImpl(LayoutResourceKind::RayPayload);
 HLSLRayTracingLayoutRulesImpl kHLSLCallablePayloadParameterLayoutRulesImpl(LayoutResourceKind::CallablePayload);
 HLSLRayTracingLayoutRulesImpl kHLSLHitAttributesParameterLayoutRulesImpl(LayoutResourceKind::HitAttributes);
+
+CPUVaryingLayoutRulesImpl kCPUVaryingInputLayoutRulesImpl(LayoutResourceKind::VaryingInput);
+CPUVaryingLayoutRulesImpl kCPUVaryingOutputLayoutRulesImpl(LayoutResourceKind::VaryingOutput);
 
 // Just copying what was done above for now, but for CUDA...
 //CUDAVaryingLayoutRulesImpl kCUDAVaryingInputLayoutRulesImpl(LayoutResourceKind::VertexInput);
@@ -979,6 +989,18 @@ LayoutRulesImpl kCPULayoutRulesImpl_ = {
 LayoutRulesImpl kCPUAnyValueLayoutRulesImpl_ = {
     &kCPULayoutRulesFamilyImpl,
     &kDefaultLayoutRulesImpl,
+    &kCPUObjectLayoutRulesImpl,
+};
+
+LayoutRulesImpl kCPUVaryingInputLayoutRulesImpl_ = {
+    &kCPULayoutRulesFamilyImpl,
+    &kCPUVaryingInputLayoutRulesImpl,
+    &kCPUObjectLayoutRulesImpl,
+};
+
+LayoutRulesImpl kCPUVaryingOutputLayoutRulesImpl_ = {
+    &kCPULayoutRulesFamilyImpl,
+    &kCPUVaryingOutputLayoutRulesImpl,
     &kCPUObjectLayoutRulesImpl,
 };
 
@@ -1280,11 +1302,11 @@ LayoutRulesImpl* CPULayoutRulesFamilyImpl::getTextureBufferRules()
 
 LayoutRulesImpl* CPULayoutRulesFamilyImpl::getVaryingInputRules()
 {
-    return nullptr;
+    return &kCPUVaryingInputLayoutRulesImpl_;
 }
 LayoutRulesImpl* CPULayoutRulesFamilyImpl::getVaryingOutputRules()
 {
-    return nullptr;
+    return &kCPUVaryingOutputLayoutRulesImpl_;
 }
 LayoutRulesImpl* CPULayoutRulesFamilyImpl::getSpecializationConstantRules()
 {

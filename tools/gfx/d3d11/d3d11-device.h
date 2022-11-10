@@ -128,6 +128,8 @@ public:
     virtual void endCommandBuffer(const CommandBufferInfo& info) override;
     virtual void writeTimestamp(IQueryPool* pool, GfxIndex index) override;
 
+    virtual void signalFence(IFence* fence, uint64_t valueToSignal) override;
+
 public:
     void _flushGraphicsState();
 

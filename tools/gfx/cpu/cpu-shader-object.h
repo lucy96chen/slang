@@ -78,8 +78,8 @@ public:
 class RootShaderObjectImpl : public ShaderObjectImpl
 {
 public:
-    virtual SLANG_NO_THROW uint32_t SLANG_MCALL addRef() override;
-    virtual SLANG_NO_THROW uint32_t SLANG_MCALL release() override;
+//     virtual SLANG_NO_THROW uint32_t SLANG_MCALL addRef() override;
+//     virtual SLANG_NO_THROW uint32_t SLANG_MCALL release() override;
 
     Result init(IDevice* device, RootShaderObjectLayoutImpl* programLayout);
 

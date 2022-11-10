@@ -201,6 +201,11 @@ public:
         SLANG_UNUSED(pool);
         SLANG_UNUSED(index);
     }
+    virtual void signalFence(IFence* fence, uint64_t valueToSignal) override
+    {
+        SLANG_UNUSED(fence);
+        SLANG_UNUSED(valueToSignal);
+    }
     virtual SLANG_NO_THROW Result SLANG_MCALL createQueryPool(
         const IQueryPool::Desc& desc, IQueryPool** pool) override
     {

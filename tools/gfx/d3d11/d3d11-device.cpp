@@ -1698,5 +1698,11 @@ void DeviceImpl::writeTimestamp(IQueryPool* pool, GfxIndex index)
     auto poolImpl = static_cast<QueryPoolImpl*>(pool);
     m_immediateContext->End(poolImpl->getQuery(index));
 }
+
+void DeviceImpl::signalFence(IFence* fence, uint64_t valueToSignal)
+{
+    SLANG_UNUSED(fence);
+    SLANG_UNUSED(valueToSignal);
+}
 } // namespace d3d11
 } // namespace gfx

@@ -52,6 +52,10 @@ public:
 
     virtual Result createRootShaderObject(IShaderProgram* program, ShaderObjectBase** outObject) override;
 
+    virtual SLANG_NO_THROW Result SLANG_MCALL createMutableRootShaderObject(
+        IShaderProgram* program,
+        IShaderObject** outObject) override;
+
     virtual SLANG_NO_THROW Result SLANG_MCALL createProgram(
         const IShaderProgram::Desc& desc,
         IShaderProgram** outProgram,
@@ -70,10 +74,20 @@ public:
     virtual SLANG_NO_THROW Result SLANG_MCALL
         createSamplerState(ISamplerState::Desc const& desc, ISamplerState** outSampler) override;
 
+    virtual SLANG_NO_THROW Result SLANG_MCALL createSwapchain(
+        const ISwapchain::Desc& desc,
+        WindowHandle window,
+        ISwapchain** outSwapchain) override;
+
+    virtual SLANG_NO_THROW Result SLANG_MCALL
+        createFence(const IFence::Desc& desc, IFence** outFence) override;
+
     virtual void submitGpuWork() override {}
     virtual void waitForGpu() override {}
     virtual void* map(IBufferResource* buffer, MapFlavor flavor) override;
     virtual void unmap(IBufferResource* buffer, size_t offsetWritten, size_t sizeWritten) override;
+
+    virtual void signalFence(IFence* fence, uint64_t valueToSignal) override;
 
 private:
     RefPtr<PipelineStateImpl> m_currentPipeline = nullptr;

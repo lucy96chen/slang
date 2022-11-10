@@ -317,6 +317,7 @@ IF EXIST "$(SolutionDir)tools\gfx\slang.slang"\ (xcopy /Q /E /Y /I "$(SolutionDi
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-base.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-buffer.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-device.h" />
+    <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-fence.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-helper-functions.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-pipeline-state.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-query.h" />
@@ -324,6 +325,7 @@ IF EXIST "$(SolutionDir)tools\gfx\slang.slang"\ (xcopy /Q /E /Y /I "$(SolutionDi
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-shader-object-layout.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-shader-object.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-shader-program.h" />
+    <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-swap-chain.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-texture.h" />
     <ClInclude Include="..\..\..\tools\gfx\cuda\cuda-base.h" />
     <ClInclude Include="..\..\..\tools\gfx\cuda\cuda-buffer.h" />
