@@ -54,6 +54,26 @@ void _unpackUnorm8Texel(void const* texelData, void* outData, size_t outSize)
     memcpy(outData, temp, outSize);
 }
 
+// TODO: This might not be 100% right...
+// template<int N>
+// void _unpackSRGBUnorm8Texel(void const* texelData, void* outData, size_t outSize)
+// {
+//     auto input = (uint8_t const*)texelData;
+// 
+//     float temp[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+//     for (int i = 0; i < N; ++i)
+//     {
+//         if (i < 3)
+//         {
+//             temp[i] = (float)pow(_unpackUnorm8Value(input[i]), 1.0 / 2.2);
+//         }
+//         else
+//         {
+//             temp[i] = _unpackUnorm8Value(input[i]);
+//         }
+//     }
+// }
+
 void _unpackUnormBGRA8Texel(void const* texelData, void* outData, size_t outSize)
 {
     auto input = (uint8_t const*)texelData;
@@ -63,6 +83,32 @@ void _unpackUnormBGRA8Texel(void const* texelData, void* outData, size_t outSize
     temp[1] = _unpackUnorm8Value(input[1]);
     temp[2] = _unpackUnorm8Value(input[0]);
     temp[3] = _unpackUnorm8Value(input[3]);
+
+    memcpy(outData, temp, outSize);
+}
+
+// TODO: This might not be 100% right...
+void _unpackSRGBUnormBGRA8Texel(void const* texelData, void* outData, size_t outSize)
+{
+    auto input = (uint8_t const*)texelData;
+
+    float temp[4];
+    temp[0] = (float)pow(_unpackUnorm8Value(input[2]), 1.0 / 2.2);
+    temp[1] = (float)pow(_unpackUnorm8Value(input[1]), 1.0 / 2.2);
+    temp[2] = (float)pow(_unpackUnorm8Value(input[0]), 1.0 / 2.2);
+    temp[3] = _unpackUnorm8Value(input[3]);
+
+    memcpy(outData, temp, outSize);
+}
+
+template<int N>
+void _unpackUInt8Texel(void const* texelData, void* outData, size_t outSize)
+{
+    auto input = (uint8_t const*)texelData;
+
+    uint8_t temp[4] = { 0, 0, 0, 0 };
+    for (int i = 0; i < N; ++i)
+        temp[i] = input[i];
 
     memcpy(outData, temp, outSize);
 }
@@ -90,6 +136,43 @@ void _unpackUInt32Texel(void const* texelData, void* outData, size_t outSize)
 
     memcpy(outData, temp, outSize);
 }
+
+template<int N>
+void _unpackInt8Texel(void const* texelData, void* outData, size_t outSize)
+{
+    auto input = (int8_t const*)texelData;
+
+    int8_t temp[4] = { 0, 0, 0, 0 };
+    for (int i = 0; i < N; ++i)
+        temp[i] = input[i];
+
+    memcpy(outData, temp, outSize);
+}
+
+template<int N>
+void _unpackInt16Texel(void const* texelData, void* outData, size_t outSize)
+{
+    auto input = (int16_t const*)texelData;
+
+    int32_t temp[4] = { 0, 0, 0, 0 };
+    for (int i = 0; i < N; ++i)
+        temp[i] = input[i];
+
+    memcpy(outData, temp, outSize);
+}
+
+template<int N>
+void _unpackInt32Texel(void const* texelData, void* outData, size_t outSize)
+{
+    auto input = (int32_t const*)texelData;
+
+    int32_t temp[4] = { 0, 0, 0, 0 };
+    for (int i = 0; i < N; ++i)
+        temp[i] = input[i];
+
+    memcpy(outData, temp, outSize);
+}
+
 
 TextureResourceImpl::~TextureResourceImpl()
 {

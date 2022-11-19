@@ -316,6 +316,9 @@ IF EXIST "$(SolutionDir)tools\gfx\slang.slang"\ (xcopy /Q /E /Y /I "$(SolutionDi
     <ClInclude Include="..\..\..\tools\gfx\command-writer.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-base.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-buffer.h" />
+    <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-command-buffer.h" />
+    <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-command-encoder.h" />
+    <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-command-queue.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-device.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-fence.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-helper-functions.h" />
@@ -327,6 +330,7 @@ IF EXIST "$(SolutionDir)tools\gfx\slang.slang"\ (xcopy /Q /E /Y /I "$(SolutionDi
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-shader-program.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-swap-chain.h" />
     <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-texture.h" />
+    <ClInclude Include="..\..\..\tools\gfx\cpu\cpu-transient-heap.h" />
     <ClInclude Include="..\..\..\tools\gfx\cuda\cuda-base.h" />
     <ClInclude Include="..\..\..\tools\gfx\cuda\cuda-buffer.h" />
     <ClInclude Include="..\..\..\tools\gfx\cuda\cuda-command-buffer.h" />
@@ -449,6 +453,9 @@ IF EXIST "$(SolutionDir)tools\gfx\slang.slang"\ (xcopy /Q /E /Y /I "$(SolutionDi
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\tools\gfx\cpu\cpu-buffer.cpp" />
+    <ClCompile Include="..\..\..\tools\gfx\cpu\cpu-command-buffer.cpp" />
+    <ClCompile Include="..\..\..\tools\gfx\cpu\cpu-command-encoder.cpp" />
+    <ClCompile Include="..\..\..\tools\gfx\cpu\cpu-command-queue.cpp" />
     <ClCompile Include="..\..\..\tools\gfx\cpu\cpu-device.cpp" />
     <ClCompile Include="..\..\..\tools\gfx\cpu\cpu-helper-functions.cpp" />
     <ClCompile Include="..\..\..\tools\gfx\cpu\cpu-pipeline-state.cpp" />
@@ -457,6 +464,7 @@ IF EXIST "$(SolutionDir)tools\gfx\slang.slang"\ (xcopy /Q /E /Y /I "$(SolutionDi
     <ClCompile Include="..\..\..\tools\gfx\cpu\cpu-shader-object-layout.cpp" />
     <ClCompile Include="..\..\..\tools\gfx\cpu\cpu-shader-object.cpp" />
     <ClCompile Include="..\..\..\tools\gfx\cpu\cpu-texture.cpp" />
+    <ClCompile Include="..\..\..\tools\gfx\cpu\cpu-transient-heap.cpp" />
     <ClCompile Include="..\..\..\tools\gfx\cuda\cuda-buffer.cpp" />
     <ClCompile Include="..\..\..\tools\gfx\cuda\cuda-command-buffer.cpp" />
     <ClCompile Include="..\..\..\tools\gfx\cuda\cuda-command-encoder.cpp" />

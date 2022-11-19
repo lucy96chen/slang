@@ -4,6 +4,7 @@
 #include <chrono>
 
 #include "cpu-buffer.h"
+#include "cpu-command-queue.h"
 #include "cpu-fence.h"
 #include "cpu-pipeline-state.h"
 #include "cpu-query.h"
@@ -12,6 +13,7 @@
 #include "cpu-shader-program.h"
 #include "cpu-swap-chain.h"
 #include "cpu-texture.h"
+#include "cpu-transient-heap.h"
 
 namespace gfx
 {
@@ -99,6 +101,24 @@ namespace cpu
         auto buffer = static_cast<BufferResourceImpl*>(inBuffer);
         RefPtr<BufferResourceViewImpl> view = new BufferResourceViewImpl(desc, buffer);
         returnComPtr(outView, view);
+        return SLANG_OK;
+    }
+
+    Result DeviceImpl::createFramebuffer(
+        const IFramebuffer::Desc& desc,
+        IFramebuffer** outFramebuffer)
+    {
+        SLANG_UNUSED(desc);
+        *outFramebuffer = nullptr;
+        return SLANG_OK;
+    }
+
+    Result DeviceImpl::createFramebufferLayout(
+        const IFramebufferLayout::Desc& desc,
+        IFramebufferLayout** outLayout)
+    {
+        SLANG_UNUSED(desc);
+        *outLayout = nullptr;
         return SLANG_OK;
     }
 
@@ -236,6 +256,39 @@ namespace cpu
         RefPtr<FenceImpl> fence = new FenceImpl();
         fence->init(this, desc);
         returnComPtr(outFence, fence);
+        return SLANG_OK;
+    }
+
+    SLANG_NO_THROW Result SLANG_MCALL DeviceImpl::waitForFences(
+        GfxCount fenceCount,
+        IFence** fences,
+        uint64_t* values,
+        bool waitForAll,
+        uint64_t timeout)
+    {
+        SLANG_UNUSED(fenceCount);
+        SLANG_UNUSED(fences);
+        SLANG_UNUSED(values);
+        SLANG_UNUSED(waitForAll);
+        SLANG_UNUSED(timeout);
+        return SLANG_OK;
+    }
+
+    SLANG_NO_THROW Result SLANG_MCALL DeviceImpl::createTransientResourceHeap(
+        const ITransientResourceHeap::Desc& desc,
+        ITransientResourceHeap** outHeap)
+    {
+        RefPtr<TransientResourceHeapImpl> transientHeap = new TransientResourceHeapImpl();
+        transientHeap->init(desc, this);
+        returnComPtr(outHeap, transientHeap);
+        return SLANG_OK;
+    }
+
+    SLANG_NO_THROW Result SLANG_MCALL DeviceImpl::createCommandQueue(const ICommandQueue::Desc& desc, ICommandQueue** outQueue)
+    {
+        RefPtr<CommandQueueImpl> commandQueue = new CommandQueueImpl();
+        commandQueue->init(this, 0);
+        returnComPtr(outQueue, commandQueue);
         return SLANG_OK;
     }
 

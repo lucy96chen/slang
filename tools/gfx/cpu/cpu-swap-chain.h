@@ -28,8 +28,7 @@ namespace cpu
         virtual SLANG_NO_THROW Result SLANG_MCALL
             getImage(GfxIndex index, ITextureResource** outResource) override
         {
-            SLANG_UNUSED(index);
-            *outResource = nullptr;
+            returnComPtr(outResource, m_images[index]);
             return SLANG_OK;
         }
 
@@ -62,12 +61,34 @@ namespace cpu
         Result init(const ISwapchain::Desc& desc, WindowHandle window)
         {
             SLANG_UNUSED(window);
+
             m_desc = desc;
+            m_desc.format = srgbToLinearFormat(m_desc.format);
+
+            m_images.clear();
+            for (GfxIndex i = 0; i < m_desc.imageCount; ++i)
+            {
+                ITextureResource::Desc imageDesc = {};
+                imageDesc.allowedStates = ResourceStateSet(
+                    ResourceState::Present, ResourceState::RenderTarget, ResourceState::CopyDestination);
+                imageDesc.type = IResource::Type::Texture2D;
+                imageDesc.arraySize = 0;
+                imageDesc.format = m_desc.format;
+                imageDesc.size.width = m_desc.width;
+                imageDesc.size.height = m_desc.height;
+                imageDesc.size.depth = 1;
+                imageDesc.numMipLevels = 1;
+                imageDesc.defaultState = ResourceState::Present;
+                RefPtr<TextureResourceImpl> image = new TextureResourceImpl(imageDesc);
+                m_images.add(image);
+            }
+
             return SLANG_OK;
         }
 
     private:
         ISwapchain::Desc m_desc;
+        Slang::ShortList<Slang::RefPtr<TextureResource>> m_images;
     };
     
 }

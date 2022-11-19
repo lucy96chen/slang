@@ -38,6 +38,14 @@ public:
         IResourceView::Desc const& desc,
         IResourceView** outView) override;
 
+    virtual SLANG_NO_THROW Result SLANG_MCALL createFramebuffer(
+        const IFramebuffer::Desc& desc,
+        IFramebuffer** outFramebuffer) override;
+
+    virtual SLANG_NO_THROW Result SLANG_MCALL createFramebufferLayout(
+        const IFramebufferLayout::Desc& desc,
+        IFramebufferLayout** outLayout) override;
+
     virtual Result createShaderObjectLayout(
         slang::TypeLayoutReflection* typeLayout,
         ShaderObjectLayoutBase** outLayout) override;
@@ -82,17 +90,26 @@ public:
     virtual SLANG_NO_THROW Result SLANG_MCALL
         createFence(const IFence::Desc& desc, IFence** outFence) override;
 
+    virtual SLANG_NO_THROW Result SLANG_MCALL waitForFences(
+        GfxCount fenceCount,
+        IFence** fences,
+        uint64_t* values,
+        bool waitForAll,
+        uint64_t timeout) override;
+
+    virtual SLANG_NO_THROW Result SLANG_MCALL createTransientResourceHeap(
+        const ITransientResourceHeap::Desc& desc,
+        ITransientResourceHeap** outHeap) override;
+
+    virtual SLANG_NO_THROW Result SLANG_MCALL
+        createCommandQueue(const ICommandQueue::Desc& desc, ICommandQueue** outQueue) override;
+
     virtual void submitGpuWork() override {}
     virtual void waitForGpu() override {}
     virtual void* map(IBufferResource* buffer, MapFlavor flavor) override;
     virtual void unmap(IBufferResource* buffer, size_t offsetWritten, size_t sizeWritten) override;
 
     virtual void signalFence(IFence* fence, uint64_t valueToSignal) override;
-
-private:
-    RefPtr<PipelineStateImpl> m_currentPipeline = nullptr;
-    RefPtr<RootShaderObjectImpl> m_currentRootObject = nullptr;
-    DeviceInfo m_info;
 
     virtual void setPipelineState(IPipelineState* state) override;
 
@@ -106,6 +123,11 @@ private:
         IBufferResource* src,
         size_t srcOffset,
         size_t size) override;
+
+private:
+    RefPtr<PipelineStateImpl> m_currentPipeline = nullptr;
+    RefPtr<RootShaderObjectImpl> m_currentRootObject = nullptr;
+    DeviceInfo m_info;
 };
 
 } // namespace cpu

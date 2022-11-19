@@ -11,6 +11,7 @@
 #include "../immediate-renderer-base.h"
 #include "../slang-context.h"
 #include "../mutable-shader-object.h"
+#include "../transient-resource-heap-base.h"
 #define SLANG_PRELUDE_NAMESPACE slang_prelude
 #include "prelude/slang-cpp-types.h"
 
@@ -36,5 +37,13 @@ namespace cpu
     class PipelineStateImpl;
     class QueryPoolImpl;
     class DeviceImpl;
+    class CommandBufferImpl;
+    class PipelineStateImpl;
+    class ResourceCommandEncoderImpl;
+    class ComputeCommandEncoderImpl;
+    class SwapchainImpl;
+    class FenceImpl;
+    class CommandQueueImpl;
+    class TransientResourceHeapImpl;
 } // namespace cpu
 } // namespace gfx
